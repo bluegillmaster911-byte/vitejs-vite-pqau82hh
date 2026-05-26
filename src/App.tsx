@@ -56,27 +56,55 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('Home');
 
   // Quiz State
+  const [shuffledQuestions, setShuffledQuestions] = useState<QuizQuestion[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [showExplanation, setShowExplanation] = useState(false);
   const [score, setScore] = useState(0);
   const [quizFinished, setQuizFinished] = useState(false);
 
-  const tabs: Tab[] = ['Home', 'Matrix', 'Cases', 'Quiz', 'Progress'];
-  const currentQuestion: QuizQuestion = quizQuestions[currentQuestionIndex];
+  const shuffleArray = <T,>(array: T[]): T[] => {
+    return [...array].sort(() => Math.random() - 0.5);
+  };
+
+  const startQuiz = () => {
+    const shuffled = shuffleArray(quizQuestions).map((q) => {
+      const optionsWithIndex = q.options.map((option, index) => ({
+        option,
+        originalIndex: index,
+      }));
+      const shuffledOptions = shuffleArray(optionsWithIndex);
+      const newCorrectIndex = shuffledOptions.findIndex(
+        (item) => item.originalIndex === q.correctIndex
+      );
+      return {
+        ...q,
+        options: shuffledOptions.map((item) => item.option),
+        correctIndex: newCorrectIndex,
+      };
+    });
+
+    setShuffledQuestions(shuffled);
+    setCurrentQuestionIndex(0);
+    setSelectedAnswer(null);
+    setShowExplanation(false);
+    setScore(0);
+    setQuizFinished(false);
+  };
+
+  const currentQuestion = shuffledQuestions[currentQuestionIndex];
 
   const handleAnswer = (index: number) => {
     setSelectedAnswer(index);
     setShowExplanation(true);
-
     if (index === currentQuestion.correctIndex) {
-      setScore(prev => prev + 1);
+      setScore((prev) => prev + 1);
     }
   };
 
   const nextQuestion = () => {
-    if (currentQuestionIndex < quizQuestions.length - 1) {
-      setCurrentQuestionIndex(prev => prev + 1);
+    if (currentQuestionIndex < shuffledQuestions.length - 1) {
+      setCurrentQuestionIndex((prev) => prev + 1);
       setSelectedAnswer(null);
       setShowExplanation(false);
     } else {
@@ -85,12 +113,10 @@ export default function App() {
   };
 
   const restartQuiz = () => {
-    setCurrentQuestionIndex(0);
-    setSelectedAnswer(null);
-    setShowExplanation(false);
-    setScore(0);
-    setQuizFinished(false);
+    startQuiz();
   };
+
+  const tabs: Tab[] = ['Home', 'Matrix', 'Cases', 'Quiz', 'Progress'];
 
   return (
     <div className="min-h-screen bg-slate-100">
@@ -121,18 +147,18 @@ export default function App() {
         </div>
       </div>
 
-      {/* Content Area */}
+      {/* Content */}
       <div className="max-w-5xl mx-auto p-6">
 
-        {/* HOME TAB */}
+        {/* HOME */}
         {activeTab === 'Home' && (
           <div>
             <h2 className="text-2xl font-bold mb-4">Welcome</h2>
-            <p className="text-slate-600">Use the tabs above to explore the Jurisdiction Matrix, take quizzes, and track your progress.</p>
+            <p className="text-slate-600">Use the tabs above to explore the Jurisdiction Matrix and take quizzes.</p>
           </div>
         )}
 
-        {/* MATRIX TAB */}
+        {/* MATRIX */}
         {activeTab === 'Matrix' && (
           <div>
             <h2 className="text-2xl font-bold mb-4">Federal Court Jurisdiction Matrix</h2>
@@ -146,7 +172,7 @@ export default function App() {
                     <h3 className="text-xl font-bold">{item.title}</h3>
                   </div>
                   <p className="text-slate-700 mb-3">{item.issue}</p>
-                  <div className="text-sm">
+                  <div className="text-sm text-slate-600">
                     <p><strong>Initial Forum:</strong> {item.start}</p>
                     <p><strong>Appeal Path:</strong> {item.appeal}</p>
                     <p><strong>Supreme Court Review:</strong> {item.review}</p>
@@ -157,30 +183,31 @@ export default function App() {
           </div>
         )}
 
-        {/* CASES TAB */}
+        {/* CASES */}
         {activeTab === 'Cases' && (
           <div>
             <h2 className="text-2xl font-bold mb-4">Landmark Cases</h2>
-            <p className="text-slate-600">Coming soon. We will add major cases with full procedural paths.</p>
+            <p className="text-slate-600">Coming soon.</p>
           </div>
         )}
 
-        {/* QUIZ TAB - CONNECTED */}
+        {/* QUIZ */}
         {activeTab === 'Quiz' && (
           <div>
             <h2 className="text-2xl font-bold mb-2">Quiz</h2>
             <p className="text-slate-600 mb-6">Test your knowledge of federal courts and landmark cases.</p>
 
-            {quizQuestions.length === 0 ? (
+            {shuffledQuestions.length === 0 ? (
               <div className="bg-white rounded-2xl p-6 text-center">
-                <p>No questions found. Please add questions to quizData.ts</p>
+                <button onClick={startQuiz} className="bg-blue-600 text-white px-8 py-3 rounded-xl font-medium">
+                  Start Quiz
+                </button>
               </div>
             ) : !quizFinished ? (
               <div className="bg-white rounded-2xl shadow p-6">
                 <div className="text-sm text-slate-500 mb-2">
-                  Question {currentQuestionIndex + 1} of {quizQuestions.length}
+                  Question {currentQuestionIndex + 1} of {shuffledQuestions.length}
                 </div>
-
                 <h3 className="text-xl font-semibold mb-6">{currentQuestion.question}</h3>
 
                 <div className="space-y-3">
@@ -214,22 +241,16 @@ export default function App() {
                 )}
 
                 {showExplanation && (
-                  <button
-                    onClick={nextQuestion}
-                    className="mt-6 w-full bg-blue-600 text-white py-3 rounded-xl font-medium active:bg-blue-700"
-                  >
-                    {currentQuestionIndex < quizQuestions.length - 1 ? 'Next Question' : 'Finish Quiz'}
+                  <button onClick={nextQuestion} className="mt-6 w-full bg-blue-600 text-white py-3 rounded-xl font-medium">
+                    {currentQuestionIndex < shuffledQuestions.length - 1 ? 'Next Question' : 'Finish Quiz'}
                   </button>
                 )}
               </div>
             ) : (
               <div className="bg-white rounded-2xl shadow p-6 text-center">
                 <h3 className="text-2xl font-bold mb-2">Quiz Complete!</h3>
-                <p className="text-xl mb-6">You scored {score} out of {quizQuestions.length}</p>
-                <button
-                  onClick={restartQuiz}
-                  className="bg-blue-600 text-white px-8 py-3 rounded-xl font-medium"
-                >
+                <p className="text-xl mb-6">You scored {score} out of {shuffledQuestions.length}</p>
+                <button onClick={restartQuiz} className="bg-blue-600 text-white px-8 py-3 rounded-xl font-medium">
                   Restart Quiz
                 </button>
               </div>
@@ -237,11 +258,11 @@ export default function App() {
           </div>
         )}
 
-        {/* PROGRESS TAB */}
+        {/* PROGRESS */}
         {activeTab === 'Progress' && (
           <div>
             <h2 className="text-2xl font-bold mb-4">Your Progress</h2>
-            <p className="text-slate-600">Progress tracking and achievements will appear here.</p>
+            <p className="text-slate-600">Progress tracking coming soon.</p>
           </div>
         )}
 
