@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { quizQuestions, QuizQuestion } from './quizData';
 
 type Tab = 'Home' | 'Matrix' | 'Cases' | 'Quiz' | 'Progress';
 
@@ -41,15 +42,6 @@ const caseTypes: CaseType[] = [
     review: 'Possible review',
   },
   {
-    title: 'Patents & Federal Trade',
-    color: 'bg-cyan-100 border-cyan-500',
-    icon: '💡',
-    issue: 'Patents, trademarks, federal personnel disputes',
-    start: 'District Court / Specialized Tribunal',
-    appeal: 'Federal Circuit → Supreme Court',
-    review: 'Possible review',
-  },
-  {
     title: 'Federal Criminal Cases',
     color: 'bg-yellow-100 border-yellow-500',
     icon: '🚔',
@@ -58,39 +50,47 @@ const caseTypes: CaseType[] = [
     appeal: 'Circuit Court → Supreme Court',
     review: 'Possible review',
   },
-  {
-    title: 'Immigration Matters',
-    color: 'bg-fuchsia-100 border-fuchsia-500',
-    icon: '🌎',
-    issue: 'Removal, asylum, deportation, immigration status',
-    start: 'Immigration Judge / BIA',
-    appeal: 'Circuit Court → Supreme Court',
-    review: 'Possible review',
-  },
-  {
-    title: 'Military Justice',
-    color: 'bg-red-100 border-red-500',
-    icon: '⭐',
-    issue: 'Court-martial and UCMJ violations',
-    start: 'Court-Martial',
-    appeal: 'CAAF → Supreme Court',
-    review: 'Rare review',
-  },
-  {
-    title: 'Administrative Agency Review',
-    color: 'bg-blue-100 border-blue-500',
-    icon: '📋',
-    issue: 'EPA, SEC, FCC, NLRB, SSA, agency actions',
-    start: 'Administrative Law Judge / Agency Board',
-    appeal: 'Circuit Court → Supreme Court',
-    review: 'Possible review',
-  },
 ];
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('Home');
 
+  // Quiz State
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
+  const [showExplanation, setShowExplanation] = useState(false);
+  const [score, setScore] = useState(0);
+  const [quizFinished, setQuizFinished] = useState(false);
+
   const tabs: Tab[] = ['Home', 'Matrix', 'Cases', 'Quiz', 'Progress'];
+  const currentQuestion: QuizQuestion = quizQuestions[currentQuestionIndex];
+
+  const handleAnswer = (index: number) => {
+    setSelectedAnswer(index);
+    setShowExplanation(true);
+
+    if (index === currentQuestion.correctIndex) {
+      setScore(prev => prev + 1);
+    }
+  };
+
+  const nextQuestion = () => {
+    if (currentQuestionIndex < quizQuestions.length - 1) {
+      setCurrentQuestionIndex(prev => prev + 1);
+      setSelectedAnswer(null);
+      setShowExplanation(false);
+    } else {
+      setQuizFinished(true);
+    }
+  };
+
+  const restartQuiz = () => {
+    setCurrentQuestionIndex(0);
+    setSelectedAnswer(null);
+    setShowExplanation(false);
+    setScore(0);
+    setQuizFinished(false);
+  };
 
   return (
     <div className="min-h-screen bg-slate-100">
@@ -121,67 +121,38 @@ export default function App() {
         </div>
       </div>
 
-      {/* Content */}
-      <div className="max-w-6xl mx-auto p-6">
+      {/* Content Area */}
+      <div className="max-w-5xl mx-auto p-6">
 
         {/* HOME TAB */}
         {activeTab === 'Home' && (
           <div>
             <h2 className="text-2xl font-bold mb-4">Welcome</h2>
-            <p className="text-slate-600">Use the tabs above to explore the Jurisdiction Matrix, Landmark Cases, take Quizzes, and track your Progress.</p>
+            <p className="text-slate-600">Use the tabs above to explore the Jurisdiction Matrix, take quizzes, and track your progress.</p>
           </div>
         )}
 
-        {/* MATRIX TAB - FULL CONTENT RESTORED */}
+        {/* MATRIX TAB */}
         {activeTab === 'Matrix' && (
           <div>
-            <h2 className="text-2xl font-bold mb-2">Federal Court Jurisdiction Matrix</h2>
+            <h2 className="text-2xl font-bold mb-4">Federal Court Jurisdiction Matrix</h2>
             <p className="text-slate-600 mb-6">Interactive Decision System for U.S. Federal Court Pathways</p>
 
-            <div className="overflow-x-auto">
-              <div className="min-w-[1100px] space-y-4">
-                {/* Header */}
-                <div className="grid grid-cols-4 gap-4 text-center font-bold text-white text-sm">
-                  <div className="bg-slate-900 rounded-2xl p-4">Type of Federal Issue</div>
-                  <div className="bg-green-700 rounded-2xl p-4">Initial Forum</div>
-                  <div className="bg-purple-700 rounded-2xl p-4">Appeal Path</div>
-                  <div className="bg-amber-600 rounded-2xl p-4">Supreme Court Review</div>
-                </div>
-
-                {caseTypes.map((item, index) => (
-                  <div key={index} className="grid grid-cols-4 gap-4 items-stretch">
-                    <div className={`rounded-2xl border-2 shadow p-5 ${item.color}`}>
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="text-3xl">{item.icon}</div>
-                        <h3 className="text-xl font-bold text-slate-800">{item.title}</h3>
-                      </div>
-                      <p className="text-slate-700 text-sm">{item.issue}</p>
-                    </div>
-
-                    <div className="bg-white rounded-2xl shadow p-5 border flex items-center">
-                      <div>
-                        <div className="font-semibold text-green-800">{item.start}</div>
-                        <div className="text-xs text-slate-500 mt-1">Initial Forum</div>
-                      </div>
-                    </div>
-
-                    <div className="bg-white rounded-2xl shadow p-5 border flex items-center">
-                      <div>
-                        <div className="font-semibold text-purple-800 mb-1">Appeal Route</div>
-                        <div className="text-sm text-slate-700">{item.appeal}</div>
-                      </div>
-                    </div>
-
-                    <div className="bg-white rounded-2xl shadow p-5 border flex items-center">
-                      <div>
-                        <div className="text-2xl mb-1">⚖️</div>
-                        <div className="font-bold text-amber-700">YES</div>
-                        <div className="text-xs text-slate-600">{item.review}</div>
-                      </div>
-                    </div>
+            <div className="space-y-4">
+              {caseTypes.map((item, index) => (
+                <div key={index} className="bg-white rounded-2xl shadow p-5 border">
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="text-3xl">{item.icon}</span>
+                    <h3 className="text-xl font-bold">{item.title}</h3>
                   </div>
-                ))}
-              </div>
+                  <p className="text-slate-700 mb-3">{item.issue}</p>
+                  <div className="text-sm">
+                    <p><strong>Initial Forum:</strong> {item.start}</p>
+                    <p><strong>Appeal Path:</strong> {item.appeal}</p>
+                    <p><strong>Supreme Court Review:</strong> {item.review}</p>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}
@@ -190,15 +161,79 @@ export default function App() {
         {activeTab === 'Cases' && (
           <div>
             <h2 className="text-2xl font-bold mb-4">Landmark Cases</h2>
-            <p className="text-slate-600">Coming soon. We'll add major cases with procedural paths here.</p>
+            <p className="text-slate-600">Coming soon. We will add major cases with full procedural paths.</p>
           </div>
         )}
 
-        {/* QUIZ TAB */}
+        {/* QUIZ TAB - CONNECTED */}
         {activeTab === 'Quiz' && (
           <div>
-            <h2 className="text-2xl font-bold mb-4">Quiz</h2>
-            <p className="text-slate-600">Quiz system coming soon.</p>
+            <h2 className="text-2xl font-bold mb-2">Quiz</h2>
+            <p className="text-slate-600 mb-6">Test your knowledge of federal courts and landmark cases.</p>
+
+            {quizQuestions.length === 0 ? (
+              <div className="bg-white rounded-2xl p-6 text-center">
+                <p>No questions found. Please add questions to quizData.ts</p>
+              </div>
+            ) : !quizFinished ? (
+              <div className="bg-white rounded-2xl shadow p-6">
+                <div className="text-sm text-slate-500 mb-2">
+                  Question {currentQuestionIndex + 1} of {quizQuestions.length}
+                </div>
+
+                <h3 className="text-xl font-semibold mb-6">{currentQuestion.question}</h3>
+
+                <div className="space-y-3">
+                  {currentQuestion.options.map((option, index) => (
+                    <button
+                      key={index}
+                      onClick={() => handleAnswer(index)}
+                      disabled={showExplanation}
+                      className={`w-full text-left p-4 rounded-xl border transition ${
+                        showExplanation
+                          ? index === currentQuestion.correctIndex
+                            ? 'bg-green-100 border-green-500'
+                            : index === selectedAnswer
+                            ? 'bg-red-100 border-red-500'
+                            : 'bg-white border-gray-200'
+                          : 'bg-white border-gray-300 active:bg-gray-100'
+                      }`}
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+
+                {showExplanation && (
+                  <div className="mt-6 p-4 bg-slate-50 rounded-xl">
+                    <p className="font-semibold mb-1">
+                      {selectedAnswer === currentQuestion.correctIndex ? '✅ Correct!' : '❌ Incorrect'}
+                    </p>
+                    <p className="text-slate-700">{currentQuestion.explanation}</p>
+                  </div>
+                )}
+
+                {showExplanation && (
+                  <button
+                    onClick={nextQuestion}
+                    className="mt-6 w-full bg-blue-600 text-white py-3 rounded-xl font-medium active:bg-blue-700"
+                  >
+                    {currentQuestionIndex < quizQuestions.length - 1 ? 'Next Question' : 'Finish Quiz'}
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="bg-white rounded-2xl shadow p-6 text-center">
+                <h3 className="text-2xl font-bold mb-2">Quiz Complete!</h3>
+                <p className="text-xl mb-6">You scored {score} out of {quizQuestions.length}</p>
+                <button
+                  onClick={restartQuiz}
+                  className="bg-blue-600 text-white px-8 py-3 rounded-xl font-medium"
+                >
+                  Restart Quiz
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -206,7 +241,7 @@ export default function App() {
         {activeTab === 'Progress' && (
           <div>
             <h2 className="text-2xl font-bold mb-4">Your Progress</h2>
-            <p className="text-slate-600">Progress tracking coming soon.</p>
+            <p className="text-slate-600">Progress tracking and achievements will appear here.</p>
           </div>
         )}
 
